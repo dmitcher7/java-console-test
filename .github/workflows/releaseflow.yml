@@ -11,11 +11,16 @@ jobs:
     steps:
       - name: Checkout repository code into runner
         uses: actions/checkout@v2
+
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
           java-version: '11'
           distribution: 'adopt'
+
+      - name: Build the JAR file with Maven
+        run: mvn clean package -B
+
       - name: Test with Maven
         run: mvn test -B
 
@@ -25,18 +30,26 @@ jobs:
     steps:
       - name: Checkout repository code into runner
         uses: actions/checkout@v2
+
       - name: Set up JDK 11
         uses: actions/setup-java@v2
         with:
           java-version: '11'
           distribution: 'adopt'
+
       - name: Build the JAR file with Maven
-        run: mvn package -B
+        run: mvn clean package -B
+
+      - name: Verify if JAR file exists
+        run: |
+          ls -l target/
+          ls -l target/*.jar
+
       - name: Upload the JAR file to GitHub as an artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4  # Using v4 here
         with:
-          name: zipped-project-jar-file
-          path: target/*.jar
+          name: example-bicycle-jar
+          path: target/example-bicycle-0.0.1-SNAPSHOT.jar
 
   release:
     runs-on: ubuntu-latest
@@ -44,17 +57,14 @@ jobs:
     steps:
       - name: Checkout repository code into runner
         uses: actions/checkout@v2
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
+
+      - name: Download the JAR artifact
+        uses: actions/download-artifact@v4  # Using v4 here
         with:
-          java-version: '11'
-          distribution: 'adopt'
-      - name: Download artifact from deliver-jar job
-        uses: actions/download-artifact@v2
-        with:
-          name: zipped-project-jar-file
+          name: example-bicycle-jar
+
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref }}
-          files: ./target/*.jar
+          files: example-bicycle-0.0.1-SNAPSHOT.jar  # Path without "target/"
